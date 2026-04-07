@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { DashboardDataset, DashboardTerminationRecord } from "@/lib/dashboard";
-import { getManagerSeries, getReasonSeries, getTerminationMonthSeries } from "@/lib/dashboard";
+import { getManagerSeries, getReasonSeries, getTerminationMonthSeries } from "@/lib/dashboard-helpers";
 import { downloadTextFile, formatDateLabel } from "@/lib/utils";
 
 type Filters = {
