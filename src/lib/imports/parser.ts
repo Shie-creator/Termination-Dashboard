@@ -34,16 +34,18 @@ function rowsToObjects(rawRows: unknown[][]): ParsedFlatFile {
 export function parseTabularFile(buffer: ArrayBuffer, fileName: string): ParsedFlatFile {
   if (fileName.toLowerCase().endsWith(".csv")) {
     const text = new TextDecoder().decode(buffer);
-    const parsed = Papa.parse<Record<string, string>>(text, {
+    const parsed = Papa.parse(text, {
       header: true,
       skipEmptyLines: "greedy",
-      transformHeader: (header) => header.trim(),
+      transformHeader: (header: string) => header.trim(),
     });
 
     return {
       headers: parsed.meta.fields ?? [],
-      rows: (parsed.data ?? []).map((row) =>
-        Object.fromEntries(Object.entries(row).map(([key, value]) => [key, String(value ?? "").trim()])),
+      rows: ((parsed.data ?? []) as Record<string, unknown>[]).map((row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([key, value]) => [key, String(value ?? "").trim()]),
+        ),
       ),
       issues: [],
     };
@@ -160,11 +162,15 @@ export function parseTurnoverReport(buffer: ArrayBuffer): TurnoverSummaryRow {
     blankrows: false,
   });
 
-  const stringRows = rows.map((row) => row.map((value) => String(value ?? "").trim()));
-  const filteredByRow = stringRows.find((row) => row.some((value) => value.includes("Date Range:")));
-  const generatedRow = stringRows.find((row) => row[0]?.startsWith("Date & Time:"));
-  const headerIndex = stringRows.findIndex((row) => row[0] === "Employee Id");
-  const totalIndex = stringRows.findIndex((row) => row[0] === "Total");
+  const stringRows = rows.map((row: unknown[]) =>
+    row.map((value: unknown) => String(value ?? "").trim()),
+  );
+  const filteredByRow = stringRows.find((row: string[]) =>
+    row.some((value: string) => value.includes("Date Range:")),
+  );
+  const generatedRow = stringRows.find((row: string[]) => row[0]?.startsWith("Date & Time:"));
+  const headerIndex = stringRows.findIndex((row: string[]) => row[0] === "Employee Id");
+  const totalIndex = stringRows.findIndex((row: string[]) => row[0] === "Total");
 
   if (!filteredByRow || headerIndex === -1 || totalIndex === -1) {
     throw new Error("This turnover report does not match the expected structure.");
@@ -176,8 +182,8 @@ export function parseTurnoverReport(buffer: ArrayBuffer): TurnoverSummaryRow {
 
   const detailRows: TurnoverEmployeeRow[] = stringRows
     .slice(headerIndex + 1, totalIndex)
-    .filter((row) => row.some(Boolean))
-    .map((row) => ({
+    .filter((row: string[]) => row.some(Boolean))
+    .map((row: string[]) => ({
       employeeExternalId: row[0] || null,
       username: row[2] || null,
       firstName: row[3] || "",
@@ -187,9 +193,9 @@ export function parseTurnoverReport(buffer: ArrayBuffer): TurnoverSummaryRow {
       serviceLengthYears: parseNumeric(row[8]),
     }));
 
-  const terminatedRow = stringRows.find((row) => row[1] === "Terminated");
-  const headcountRow = stringRows.find((row) => row[1] === "Average Active Headcount Per Day");
-  const rateRow = stringRows.find((row) => row[1]?.startsWith("Turnover Rate"));
+  const terminatedRow = stringRows.find((row: string[]) => row[1] === "Terminated");
+  const headcountRow = stringRows.find((row: string[]) => row[1] === "Average Active Headcount Per Day");
+  const rateRow = stringRows.find((row: string[]) => row[1]?.startsWith("Turnover Rate"));
 
   const terminatedCount = parseNumeric(terminatedRow?.[2]);
   const averageActiveHeadcount = parseNumeric(headcountRow?.[2]);
